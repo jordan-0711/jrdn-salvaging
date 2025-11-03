@@ -1,3 +1,62 @@
+class jrdn_DebugSettings
+{
+    bool Enable = true;
+    bool TraceWet = true;
+    bool TraceTools = true;
+    bool TracePower = true;
+    bool TracePenalties = true;
+    bool TraceRecipes = true;
+}
+
+class jrdn_PowerSettings
+{
+    float base9V = 8.0;
+    float baseCar = 40.0;
+    float baseTruck = 40.0;
+    float baseDry = 50.0;
+    float baseWet = 20.0;
+    float multiplyDry = 1.0;
+    float multiplyDamp = 1.3;
+    float multiplyWet = 1.5;
+    float multiplySoaking = 2.0;
+    float multiplyDrenched = 2.5;
+}
+
+class jrdn_CutSettings
+{
+    float baseChance = 0.2;
+    float wetnessScale = 0.9;
+    float healthPenalty = 5.0;
+}
+
+class jrdn_ToolSettings
+{
+    float preferredMultiplier = 1.0;
+    float notPreferredMultiplier = 1.4;
+    float notPreferredFixed = -10.0;
+}
+
+class jrdn_WetSettings
+{
+    bool lockoutAtSoaking = true;
+    float combineDryThreshold = 0.1;
+}
+
+class jrdn_GearSettings
+{
+    float gloveMitigation = 0.5;
+}
+
+class jrdn_ResultSettings
+{
+    float wetPenaltyScale = 4.0;
+    float wetPenaltyMax = 10.0;
+    float wrongToolPenalty = 10.0;
+    float poweredPenalty = 0.0;
+    bool ruinOnCarBattery = true;
+    bool ruinOnTruckBattery = false;
+}
+
 class jrdn_gps_config
 {
     static const string MOD_AUTHOR = "JRDN_GPS";
@@ -9,50 +68,29 @@ class jrdn_gps_config
     private const static string ModFolder = "$profile:\\" + MOD_AUTHOR + "\\";
     private const static string ConfigName = "JRDNSalvagingConfig.json";
     private const static string CURRENT_VERSION = "1";
-    string CONFIG_VERSION;
+    string ConfigVersion;
     
-    bool debug_Enable = true;
-    bool debug_TraceWet = true;
-    bool debug_TraceTools = true;
-    bool debug_TracePower = true;
-    bool debug_TracePenalties = true;
-    bool debug_TraceRecipes = true;
+    ref jrdn_DebugSettings DebugSettings;
+    ref jrdn_PowerSettings PowerSettings;
+    ref jrdn_CutSettings CutSettings;
+    ref jrdn_ToolSettings ToolSettings;
+    ref jrdn_WetSettings WetSettings;
+    ref jrdn_GearSettings GearSettings;
+    ref jrdn_ResultSettings ResultSettings;
     
-    float power_base9V = 8.0;
-    float power_baseCar = 25.0;
-    float power_baseTruck = 40.0;
-    float power_baseDry = 50.0;
-    float power_baseWet = 20.0;
-    float power_baseMultiplyDry = 1.0;
-    float power_baseMultiplyDamp = 1.25;
-    float power_baseMultiplyWet = 1.50;
-    float power_baseMultiplySoaking = 2.00;
-    float power_baseMultiplyDrenched = 2.50;
-    
-    float cut_baseChance = 0.15;
-    float cut_wetnessScale = 0.85;
-    float cut_healthPenaltyAbs = 5.0;
-    
-    float tools_preferredMul = 1.0;
-    float tools_notPreferredMul = 1.35;
-    float tools_notPreferredFixed = -10.0;
-    
-    bool wet_lockoutAtSoaking = true;
-    float wet_combineDryThreshold = 0.05;
-    
-    float gear_gloveMitigation = 0.5;
-    
-    float result_wetPenaltyScale = 4.0;
-    float result_wetPenaltyMax = 10.0;
-    float result_wrongToolPenaltyAbs = 10.0;
-    float result_poweredPenaltyAbs = 0.0;
-    bool result_ruinOnCarBattery = true;
-    bool result_ruinOnTruckBattery = false;
+    void jrdn_gps_config()
+    {
+        DebugSettings = new jrdn_DebugSettings;
+        PowerSettings = new jrdn_PowerSettings;
+        CutSettings = new jrdn_CutSettings;
+        ToolSettings = new jrdn_ToolSettings;
+        WetSettings = new jrdn_WetSettings;
+        GearSettings = new jrdn_GearSettings;
+        ResultSettings = new jrdn_ResultSettings;
+    }
     
     void Load()
     {
-        SetDefaultValues();
-        
         if (GetGame().IsDedicatedServer())
         {
             if (!LOAD_ON_SERVER)
@@ -63,9 +101,11 @@ class jrdn_gps_config
         {
             JsonFileLoader<jrdn_gps_config>.JsonLoadFile(ModFolder + ConfigName, this);
             
-            if (CONFIG_VERSION != CURRENT_VERSION)
+            if (ConfigVersion != CURRENT_VERSION)
             {
                 JsonFileLoader<jrdn_gps_config>.JsonSaveFile(ModFolder + ConfigName + "_old", this);
+                ConfigVersion = CURRENT_VERSION;
+                Save();
             }
             else
             {
@@ -74,13 +114,9 @@ class jrdn_gps_config
             }
         }
         
-        CONFIG_VERSION = CURRENT_VERSION;
+        ConfigVersion = CURRENT_VERSION;
         Save();
         Print("[JRDN_GPS] Config created with default values");
-    }
-    
-    void SetDefaultValues()
-    {
     }
     
     void Save()

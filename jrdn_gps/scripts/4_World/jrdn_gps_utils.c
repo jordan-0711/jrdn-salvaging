@@ -6,37 +6,37 @@
 // Debug logging helpers
 static void jrdn_Dbg(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable) return;
+    if (!GetJRDNConfig().DebugSettings.Enable) return;
     Print("[JGPS] " + msg);
 }
 
 static void jrdn_DbgWet(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable || !GetJRDNConfig().debug_TraceWet) return;
+    if (!GetJRDNConfig().DebugSettings.Enable || !GetJRDNConfig().DebugSettings.TraceWet) return;
     Print("[JGPS][WET] " + msg);
 }
 
 static void jrdn_DbgTool(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable || !GetJRDNConfig().debug_TraceTools) return;
+    if (!GetJRDNConfig().DebugSettings.Enable || !GetJRDNConfig().DebugSettings.TraceTools) return;
     Print("[JGPS][TOOL] " + msg);
 }
 
 static void jrdn_DbgPower(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable || !GetJRDNConfig().debug_TracePower) return;
+    if (!GetJRDNConfig().DebugSettings.Enable || !GetJRDNConfig().DebugSettings.TracePower) return;
     Print("[JGPS][POWER] " + msg);
 }
 
 static void jrdn_DbgPenalty(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable || !GetJRDNConfig().debug_TracePenalties) return;
+    if (!GetJRDNConfig().DebugSettings.Enable || !GetJRDNConfig().DebugSettings.TracePenalties) return;
     Print("[JGPS][PENALTY] " + msg);
 }
 
 static void jrdn_DbgRecipe(string msg)
 {
-    if (!GetJRDNConfig().debug_Enable || !GetJRDNConfig().debug_TraceRecipes) return;
+    if (!GetJRDNConfig().DebugSettings.Enable || !GetJRDNConfig().DebugSettings.TraceRecipes) return;
     Print("[JGPS][RECIPE] " + msg);
 }
 
@@ -376,14 +376,14 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     jrdn_DbgTool("Gloves: " + hasGloves);
     jrdn_DbgWet("Wetness: " + wetness + " (threshold: " + GameConstants.STATE_DAMP + ")");
     
-    float toolMul = cfg.tools_preferredMul;
-    if (!isPreferred) toolMul = cfg.tools_notPreferredMul;
+    float toolMul = cfg.ToolSettings.preferredMultiplier;
+    if (!isPreferred) toolMul = cfg.ToolSettings.notPreferredMultiplier;
     
     float gloveMitigation = 0.0;
-    if (hasGloves) gloveMitigation = cfg.gear_gloveMitigation;
+    if (hasGloves) gloveMitigation = cfg.GearSettings.gloveMitigation;
     
-    float baseChance = cfg.cut_baseChance;
-    float wetScale = cfg.cut_wetnessScale;
+    float baseChance = cfg.CutSettings.baseChance;
+    float wetScale = cfg.CutSettings.wetnessScale;
     
     float finalChance = baseChance * (1.0 + (wetness * wetScale));
     finalChance = finalChance * toolMul;
@@ -404,7 +404,7 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     
     jrdn_DbgPenalty("CUT! (rolled " + (roll * 100.0) + "%)");
     
-    float damage = cfg.cut_healthPenaltyAbs * toolMul * (1.0 - gloveMitigation);
+    float damage = cfg.CutSettings.healthPenalty * toolMul * (1.0 - gloveMitigation);
     if (damage > 0.0)
     {
         player.AddHealth("", "", -damage);
@@ -453,34 +453,34 @@ static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     jrdn_DbgTool("Preferred: " + isPreferred);
     
     float baseShock = 0.0;
-    if (powerType == 1) baseShock = cfg.power_base9V;
-    if (powerType == 2) baseShock = cfg.power_baseCar;
-    if (powerType == 3) baseShock = cfg.power_baseTruck;
+    if (powerType == 1) baseShock = cfg.PowerSettings.base9V;
+    if (powerType == 2) baseShock = cfg.PowerSettings.baseCar;
+    if (powerType == 3) baseShock = cfg.PowerSettings.baseTruck;
     
-    float wetMul = cfg.power_baseMultiplyDry;
+    float wetMul = cfg.PowerSettings.multiplyDry;
     if (wetness >= GameConstants.STATE_DAMP && wetness < GameConstants.STATE_WET)
-        wetMul = cfg.power_baseMultiplyDamp;
+        wetMul = cfg.PowerSettings.multiplyDamp;
     else if (wetness >= GameConstants.STATE_WET && wetness < GameConstants.STATE_SOAKING_WET)
-        wetMul = cfg.power_baseMultiplyWet;
+        wetMul = cfg.PowerSettings.multiplyWet;
     else if (wetness >= GameConstants.STATE_SOAKING_WET && wetness < GameConstants.STATE_DRENCHED)
-        wetMul = cfg.power_baseMultiplySoaking;
+        wetMul = cfg.PowerSettings.multiplySoaking;
     else if (wetness >= GameConstants.STATE_DRENCHED)
-        wetMul = cfg.power_baseMultiplyDrenched;
+        wetMul = cfg.PowerSettings.multiplyDrenched;
     
-    float toolMul = cfg.tools_preferredMul;
-    if (!isPreferred) toolMul = cfg.tools_notPreferredMul;
+    float toolMul = cfg.ToolSettings.preferredMultiplier;
+    if (!isPreferred) toolMul = cfg.ToolSettings.notPreferredMultiplier;
     
     if (powerType == 2 || powerType == 3)
     {
         float currentShock = player.GetHealth("", "Shock");
         float maxShock = player.GetMaxHealth("", "Shock");
         
-        float targetShock = cfg.power_baseDry;
-        if (wetness >= GameConstants.STATE_WET) targetShock = cfg.power_baseWet;
+        float targetShock = cfg.PowerSettings.baseDry;
+        if (wetness >= GameConstants.STATE_WET) targetShock = cfg.PowerSettings.baseWet;
         
         if (!isPreferred)
         {
-            targetShock = targetShock + cfg.tools_notPreferredFixed;
+            targetShock = targetShock + cfg.ToolSettings.notPreferredFixed;
         }
         
         if (targetShock < 0.0) targetShock = 0.0;
@@ -592,7 +592,7 @@ static bool CanCombineWet(ItemBase ingredient0, ItemBase ingredient1)
     if (!ingredient0 || !ingredient1) return false;
     
     jrdn_gps_config cfg = GetJRDNConfig();
-    float threshold = cfg.wet_combineDryThreshold;
+    float threshold = cfg.WetSettings.combineDryThreshold;
     
     array<ItemBase> items = new array<ItemBase>;
     items.Insert(ingredient0);
@@ -650,15 +650,15 @@ static void ApplyCuttingResultPenalties(array<ItemBase> results, ItemBase tool, 
     float wetPenalty = 0.0;
     if (wetness >= GameConstants.STATE_DAMP)
     {
-        float scaled = wetness * cfg.result_wetPenaltyScale;
+        float scaled = wetness * cfg.ResultSettings.wetPenaltyScale;
         if (scaled < 0.0) scaled = 0.0;
-        float maxP = cfg.result_wetPenaltyMax;
+        float maxP = cfg.ResultSettings.wetPenaltyMax;
         if (scaled > maxP) scaled = maxP;
         wetPenalty = scaled;
     }
     
     float wrongToolPenalty = 0.0;
-    if (!isPreferred) wrongToolPenalty = cfg.result_wrongToolPenaltyAbs;
+    if (!isPreferred) wrongToolPenalty = cfg.ResultSettings.wrongToolPenalty;
     
     float totalPenalty = wetPenalty + wrongToolPenalty;
     
@@ -694,18 +694,18 @@ static void ApplyElectronicsResultPenalties(array<ItemBase> results, ItemBase to
     float wetPenalty = 0.0;
     if (wetness >= GameConstants.STATE_DAMP)
     {
-        float scaled = wetness * cfg.result_wetPenaltyScale;
+        float scaled = wetness * cfg.ResultSettings.wetPenaltyScale;
         if (scaled < 0.0) scaled = 0.0;
-        float maxP = cfg.result_wetPenaltyMax;
+        float maxP = cfg.ResultSettings.wetPenaltyMax;
         if (scaled > maxP) scaled = maxP;
         wetPenalty = scaled;
     }
     
     float wrongToolPenalty = 0.0;
-    if (!isPreferred) wrongToolPenalty = cfg.result_wrongToolPenaltyAbs;
+    if (!isPreferred) wrongToolPenalty = cfg.ResultSettings.wrongToolPenalty;
     
     float poweredPenalty = 0.0;
-    if (powerType > 0) poweredPenalty = cfg.result_poweredPenaltyAbs;
+    if (powerType > 0) poweredPenalty = cfg.ResultSettings.poweredPenalty;
     
     float totalPenalty = wetPenalty + wrongToolPenalty + poweredPenalty;
     
@@ -726,12 +726,12 @@ static void ApplyElectronicsResultPenalties(array<ItemBase> results, ItemBase to
         if (totalPenalty > 0.0)
             result.AddHealth("", "", -totalPenalty);
         
-        if (powerType == 2 && cfg.result_ruinOnCarBattery)
+        if (powerType == 2 && cfg.ResultSettings.ruinOnCarBattery)
         {
             result.SetHealth("", "", 0.0);
             jrdn_DbgPenalty("Result RUINED by car battery flag");
         }
-        else if (powerType == 3 && cfg.result_ruinOnTruckBattery)
+        else if (powerType == 3 && cfg.ResultSettings.ruinOnTruckBattery)
         {
             result.SetHealth("", "", 0.0);
             jrdn_DbgPenalty("Result RUINED by truck battery flag");
