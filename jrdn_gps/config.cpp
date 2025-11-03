@@ -29,7 +29,11 @@ class CfgMods
 		type = "mod";
 		dependencies[] = {"World"};
 		class defs
-		{
+		{   
+            class gameScriptModule
+			{
+				files[] = {"jrdn_gps/Scripts/3_Game"};
+			};
 			class worldScriptModule
 			{
 				files[] = {"jrdn_gps/Scripts/4_World"};
