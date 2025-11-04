@@ -27,16 +27,23 @@ class CfgMods
 		version = "1.0";
 		extra = 0;
 		type = "mod";
-		dependencies[] = {"World"};
+		dependencies[] = {"Game", "World", "Mission"};
 		class defs
 		{   
             class gameScriptModule
 			{
+				value = "";
 				files[] = {"jrdn_gps/Scripts/3_Game"};
 			};
 			class worldScriptModule
 			{
+				value = "";
 				files[] = {"jrdn_gps/Scripts/4_World"};
+			};
+            class missionScriptModule
+			{
+				value = "";
+				files[] = {"jrdn_gps/Scripts/5_Mission"};
 			};
 		};
 	};

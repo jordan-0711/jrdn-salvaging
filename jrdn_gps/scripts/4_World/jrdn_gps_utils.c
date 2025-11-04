@@ -40,6 +40,22 @@ static void jrdn_DbgRecipe(string msg)
     Print("[JRDN] " + msg);
 }
 
+enum ERPCsCustom
+{
+    RPC_JRDN_PLAY_SOUND = 20000,
+}
+
+static void PlaySoundOnClients(PlayerBase player, string soundName)
+{
+    if (!player) return;
+    if (!GetGame()) return;
+    if (!GetGame().IsServer()) return;
+    
+    ScriptRPC rpc = new ScriptRPC();
+    rpc.Write(soundName);
+    rpc.Send(player, ERPCsCustom.RPC_JRDN_PLAY_SOUND, true, player.GetIdentity());
+}
+
 // Tool Categories
 enum toolCategory
 {
@@ -132,6 +148,17 @@ string GetToolCategoryName(toolCategory cat)
 
 class jrdn_helpers
 {
+    static void PlaySoundOnClients(PlayerBase player, string soundName)
+    {
+        if (!player) return;
+        if (!GetGame()) return;
+        if (!GetGame().IsServer()) return;
+        
+        ScriptRPC rpc = new ScriptRPC();
+        rpc.Write(soundName);
+        rpc.Send(player, ERPCsCustom.RPC_JRDN_PLAY_SOUND, true, player.GetIdentity());
+    }
+
     static float GetHighestWetness(array<ItemBase> items)
     {
         if (!items) return 0.0;
@@ -222,6 +249,9 @@ class jrdn_helpers
         
         if (player.ServerDropEntity(inHands))
         {
+            jrdn_DbgPower("  SOUND: Sending combatknife_drop_SoundSet to client");
+            PlaySoundOnClients(player, "combatknife_drop_SoundSet");
+            
             jrdn_DbgPower("  Dropped tool from hands: " + inHands.GetType());
         }
         else
@@ -416,6 +446,7 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     {
         player.AddHealth("", "", -damage);
         jrdn_DbgPenalty("  Applied " + damage + " damage to player");
+        PlaySoundOnClients(player, "pain_SoundVoice_Char_SoundSet");
     }
     
     string bleedLocation = jrdn_BleedSystem.GetRandomBleedLocation(usedCat);
@@ -481,6 +512,9 @@ static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     
     if (powerType == 2 || powerType == 3)
     {
+        jrdn_DbgPower("  SOUND: Sending electricFenceSpark5 to client");
+        PlaySoundOnClients(player, "defibrillator_shock_SoundSet");
+        
         float currentShock = player.GetHealth("", "Shock");
         float maxShock = player.GetMaxHealth("", "Shock");
         
@@ -503,6 +537,9 @@ static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     }
     else
     {
+        jrdn_DbgPower("  SOUND: Sending ReinDeerRoarShort_7_SoundSet to client");
+        PlaySoundOnClients(player, "ReinDeerRoarShort_7_SoundSet");
+        
         float shockDamage = baseShock * wetMul * toolMul;
         jrdn_DbgPower("  9V shock: Base:" + baseShock + " WetMul:" + wetMul + "x ToolMul:" + toolMul + "x Damage:" + shockDamage);
         player.AddHealth("", "Shock", -shockDamage);
