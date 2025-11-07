@@ -446,7 +446,6 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     {
         player.AddHealth("", "", -damage);
         jrdn_DbgPenalty("  Applied " + damage + " damage to player");
-        PlaySoundOnClients(player, "pain_SoundVoice_Char_SoundSet");
     }
     
     string bleedLocation = jrdn_BleedSystem.GetRandomBleedLocation(usedCat);
@@ -458,6 +457,7 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     }
     
     jrdn_helpers.DropItemInHands(player);
+    jrdn_notification_helper.NotifyCut(player, wetness, tool, target, bleedLocation, null);
     jrdn_DbgRecipe("--------------------");
 
 }

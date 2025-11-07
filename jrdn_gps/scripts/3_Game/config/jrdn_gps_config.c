@@ -59,14 +59,14 @@ class jrdn_ResultSettings
 
 class jrdn_gps_config
 {
-    static const string MOD_AUTHOR = "JRDN_GPS";
+    static const string MOD_AUTHOR = "Jordan";
     static const bool LOAD_ON_SERVER = true;
     static const bool LOAD_ON_CLIENT = false;
     static const bool CLIENT_SAVE_TO_SERVER_IP = false;
     static const bool SYNC_TO_CLIENTS = false;
     
-    private const static string ModFolder = "$profile:\\" + MOD_AUTHOR + "\\";
-    private const static string ConfigName = "JRDNSalvagingConfig.json";
+    private const static string ModFolder = "$profile:\\" + "JRDN_Salvaging" + "\\";
+    private const static string ConfigName = "JRDN_Salvaging_Config.json";
     private const static string CURRENT_VERSION = "1";
     string ConfigVersion;
     
@@ -109,14 +109,14 @@ class jrdn_gps_config
             }
             else
             {
-                Print("[JRDN_GPS] Config loaded successfully");
+                Print("[JRDN_Salvaging] Config loaded successfully");
                 return;
             }
         }
         
         ConfigVersion = CURRENT_VERSION;
         Save();
-        Print("[JRDN_GPS] Config created with default values");
+        Print("[JRDN_Salvaging] Config created with default values");
     }
     
     void Save()
@@ -140,7 +140,7 @@ static jrdn_gps_config GetJRDNConfig()
 {
     if (!m_jrdn_gps_config)
     {
-        Print("[JRDN_GPS] Initializing config...");
+        Print("[JRDN_Salvaging] Initializing config...");
         m_jrdn_gps_config = new jrdn_gps_config();
         m_jrdn_gps_config.Load();
     }
