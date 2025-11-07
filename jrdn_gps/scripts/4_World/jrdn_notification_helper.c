@@ -1,221 +1,272 @@
+// ===================================================================================
+// jrdn_notification_helper.c
+// Notification system for JRDN GPS Salvaging mod
+// ===================================================================================
+
 class jrdn_notification_helper
 {
-    // Get tool category from item
-    static int GetToolCategory(ItemBase tool)
+    // Get friendly item name from config, fallback to class name
+    static string GetItemFriendlyName(string className)
     {
-        if (!tool) return 0;
+        jrdn_gps_config cfg = GetJRDNConfig();
         
-        string toolType = tool.GetType();
-        toolType.ToLower();
-        
-        // Cutting tools
-        if (toolType.Contains("knife") || toolType.Contains("machete") || toolType.Contains("axe") || 
-            toolType.Contains("hatchet") || toolType.Contains("saw") || toolType.Contains("blade"))
+        if (cfg.FriendlyNames.ItemNames.Contains(className))
         {
-            return 1; // Cutting
+            return cfg.FriendlyNames.ItemNames.Get(className);
         }
         
-        // Impact tools
-        if (toolType.Contains("hammer") || toolType.Contains("wrench") || toolType.Contains("pliers") ||
-            toolType.Contains("screwdriver"))
-        {
-            return 2; // Impact
-        }
-        
-        // Prying tools
-        if (toolType.Contains("crowbar") || toolType.Contains("pry"))
-        {
-            return 3; // Prying
-        }
-        
-        return 0; // Unknown
+        // Fallback: make class name more readable
+        string result = className;
+        result.Replace("_", " ");
+        return result;
     }
     
-    // Send shock notification to player
-    static void NotifyShock(PlayerBase player, float wetness, ItemBase item, int powerType)
+    // Get friendly body part name
+    static string GetBodyPartFriendlyName(string selection)
+    {
+        if (selection == "") return "body";
+        
+        jrdn_gps_config cfg = GetJRDNConfig();
+        
+        if (cfg.FriendlyNames.BodyPartNames.Contains(selection))
+        {
+            return cfg.FriendlyNames.BodyPartNames.Get(selection);
+        }
+        
+        return selection;
+    }
+    
+    // Get wetness description from config
+    static string GetWetnessDescription(float wetness)
+    {
+        jrdn_gps_config cfg = GetJRDNConfig();
+        string key = "dry";
+        
+        if (wetness >= GameConstants.STATE_DRENCHED) key = "drenched";
+        else if (wetness >= GameConstants.STATE_SOAKING_WET) key = "soaking";
+        else if (wetness >= GameConstants.STATE_WET) key = "wet";
+        else if (wetness >= GameConstants.STATE_DAMP) key = "damp";
+        
+        if (cfg.FriendlyNames.WetnessDescriptions.Contains(key))
+        {
+            return cfg.FriendlyNames.WetnessDescriptions.Get(key);
+        }
+        
+        return key;
+    }
+    
+    // Get tool category noun from config
+    static string GetToolNoun(string categoryName)
+    {
+        jrdn_gps_config cfg = GetJRDNConfig();
+        
+        if (cfg.FriendlyNames.ToolCategoryNouns.Contains(categoryName))
+        {
+            return cfg.FriendlyNames.ToolCategoryNouns.Get(categoryName);
+        }
+        
+        return "tool";
+    }
+    
+    // Get power source friendly name
+    static string GetPowerSourceName(int powerType)
+    {
+        jrdn_gps_config cfg = GetJRDNConfig();
+        string key = powerType.ToString();
+        
+        if (cfg.FriendlyNames.PowerSourceNames.Contains(key))
+        {
+            return cfg.FriendlyNames.PowerSourceNames.Get(key);
+        }
+        
+        return "power source";
+    }
+    
+    // Replace placeholders in message template
+    static string BuildMessage(string template, map<string, string> replacements)
+    {
+        string message = template;
+        
+        for (int i = 0; i < replacements.Count(); i++)
+        {
+            string key = replacements.GetKey(i);
+            string value = replacements.GetElement(i);
+            string placeholder = "{" + key + "}";
+            message.Replace(placeholder, value);
+        }
+        
+        return message;
+    }
+    
+    // Send notification for cutting recipe
+    static void NotifyCuttingRecipe(PlayerBase player, ItemBase tool, ItemBase ingredient, ItemBase result, bool hadCut, string bleedLocation, bool wrongTool, float wetness)
     {
         if (!player) return;
         
-        string wetnessDesc = jrdn_FriendlyNames.GetWetnessDescription(wetness);
-        string itemName = "";
-        string powerDesc = "";
+        jrdn_gps_config cfg = GetJRDNConfig();
         
-        if (item)
-        {
-            itemName = jrdn_FriendlyNames.GetItemFriendlyName(item.GetType());
-        }
+        // If nothing happened, don't notify
+        if (!hadCut && !wrongTool) return;
         
-        if (powerType == 1)
-        {
-            powerDesc = "low-power";
-        }
-        else if (powerType == 2)
-        {
-            powerDesc = "medium-power";
-        }
-        else if (powerType == 3)
-        {
-            powerDesc = "high-power";
-        }
-        
-        string title = "Electric Shock!";
-        string detail = "";
-        
-        // Build message based on wetness and power
-        if (itemName != "")
-        {
-            detail = "You were shocked working on the " + wetnessDesc + " " + powerDesc + " " + itemName + "!";
-        }
-        else
-        {
-            detail = "You were shocked by the " + wetnessDesc + " " + powerDesc + " components!";
-        }
-        
-        if (powerType >= 2)
-        {
-            detail = detail + " The shock was severe.";
-        }
-        
+        string title = "";
+        string message = "";
         float duration = 5.0;
-        if (powerType == 2 || powerType == 3) duration = 7.0;
         
-        NotificationSystem.SendNotificationToPlayerExtended(player, duration, title, detail, "");
-    }
-    
-    // Send wrong tool notification to player
-    static void NotifyWrongTool(PlayerBase player, ItemBase tool, ItemBase target)
-    {
-        if (!player) return;
+        // Build replacement map
+        ref map<string, string> replacements = new map<string, string>;
         
-        string toolNoun = jrdn_FriendlyNames.GetToolNoun(GetToolCategory(tool));
-        string targetName = "";
-        
-        if (target)
+        if (tool)
         {
-            targetName = jrdn_FriendlyNames.GetItemFriendlyName(target.GetType());
+            toolCategory cat = GetToolCategory(tool);
+            string catName = GetToolCategoryName(cat);
+            replacements.Insert("tool", GetToolNoun(catName));
         }
         
-        string title = "Wrong Tool!";
-        string detail = "";
-        
-        if (targetName != "")
+        if (ingredient)
         {
-            detail = "Using your " + toolNoun + " damaged the " + targetName + ".";
-        }
-        else
-        {
-            detail = "Using your " + toolNoun + " damaged the components.";
-            if (tool && tool.GetHealth() < tool.GetMaxHealth())
-            {
-                detail = detail + " Your tool was also damaged.";
-            }
-        }
-        
-        NotificationSystem.SendNotificationToPlayerExtended(player, 4.0, title, detail, "");
-    }
-    
-    // Send power damage notification to player
-    static void NotifyPowerDamage(PlayerBase player, ItemBase item, int powerType)
-    {
-        if (!player) return;
-        
-        string itemName = "";
-        string powerDesc = "";
-        
-        if (item)
-        {
-            itemName = jrdn_FriendlyNames.GetItemFriendlyName(item.GetType());
-        }
-        
-        if (powerType == 1)
-        {
-            powerDesc = "low-power";
-        }
-        else if (powerType == 2)
-        {
-            powerDesc = "medium-power";
-        }
-        else if (powerType == 3)
-        {
-            powerDesc = "high-power";
-        }
-        
-        string title = "Component Damaged!";
-        string detail = "";
-        
-        if (itemName != "")
-        {
-            detail = "Working on the " + powerDesc + " " + itemName + " while powered damaged it.";
-            
-            if (item.IsRuined())
-            {
-                detail = detail + " The " + itemName + " was destroyed.";
-            }
-        }
-        else
-        {
-            detail = "Working on powered components damaged them.";
-        }
-        
-        float duration = 5.0;
-        if (powerType == 2 || powerType == 3) duration = 7.0;
-        
-        NotificationSystem.SendNotificationToPlayerExtended(player, duration, title, detail, "");
-    }
-    
-    // Send cut notification to player
-    static void NotifyCut(PlayerBase player, float wetness, ItemBase tool, ItemBase target, string bleedLocation, ItemBase result)
-    {
-        if (!player) return;
-        
-        string wetnessDesc = jrdn_FriendlyNames.GetWetnessDescription(wetness);
-        string toolNoun = jrdn_FriendlyNames.GetToolNoun(GetToolCategory(tool));
-        string targetName = "";
-        string bodyPart = jrdn_FriendlyNames.GetBleedLocationFriendly(bleedLocation);
-        string resultName = "";
-        
-        if (target)
-        {
-            targetName = jrdn_FriendlyNames.GetItemFriendlyName(target.GetType());
+            replacements.Insert("ingredient", GetItemFriendlyName(ingredient.GetType()));
         }
         
         if (result)
         {
-            resultName = jrdn_FriendlyNames.GetItemFriendlyName(result.GetType());
+            replacements.Insert("result", GetItemFriendlyName(result.GetType()));
         }
         
-        string title = "You Cut Yourself!";
-        string detail = "";
-        
-        // Build message
-        if (targetName != "")
+        if (bleedLocation != "")
         {
-            detail = "The " + wetnessDesc + " " + targetName + " slipped and your " + toolNoun + " cut your " + bodyPart + "!";
-        }
-        else
-        {
-            detail = "Your " + toolNoun + " slipped on the " + wetnessDesc + " surface and cut your " + bodyPart + "!";
+            replacements.Insert("bodypart", GetBodyPartFriendlyName(bleedLocation));
         }
         
-        if (resultName != "")
+        replacements.Insert("wetness", GetWetnessDescription(wetness));
+        
+        bool isWet = (wetness >= GameConstants.STATE_DAMP);
+        
+        // Select message template based on conditions
+        if (hadCut && wrongTool && result)
         {
-            detail = detail + " Your " + resultName + " took some damage too.";
+            title = cfg.NotificationMessages.Title_Cut;
+            if (isWet)
+                message = BuildMessage(cfg.NotificationMessages.Cut_WrongTool_Wet, replacements);
+            else
+                message = BuildMessage(cfg.NotificationMessages.Cut_WrongTool_Dry, replacements);
+            duration = 6.0;
+        }
+        else if (hadCut && result)
+        {
+            title = cfg.NotificationMessages.Title_Cut;
+            if (isWet)
+                message = BuildMessage(cfg.NotificationMessages.Cut_Wet, replacements);
+            else
+                message = BuildMessage(cfg.NotificationMessages.Cut_Dry, replacements);
+            duration = 6.0;
+        }
+        else if (hadCut)
+        {
+            title = cfg.NotificationMessages.Title_Cut;
+            if (isWet)
+                message = BuildMessage(cfg.NotificationMessages.Cut_NoResult_Wet, replacements);
+            else
+                message = BuildMessage(cfg.NotificationMessages.Cut_NoResult_Dry, replacements);
+            duration = 5.0;
+        }
+        else if (wrongTool && result)
+        {
+            title = cfg.NotificationMessages.Title_WrongTool;
+            message = BuildMessage(cfg.NotificationMessages.WrongTool_Only, replacements);
+            duration = 4.0;
         }
         
-        NotificationSystem.SendNotificationToPlayerExtended(player, 6.0, title, detail, "");
+        if (message != "")
+        {
+            NotificationSystem.SendNotificationToPlayerExtended(player, duration, title, message, "");
+        }
     }
     
-    // Send notification when items are too wet to combine
-    static void NotifyTooWetToCombine(PlayerBase player, ItemBase item1, ItemBase item2)
+    // Send notification for electronics recipe
+    static void NotifyElectronicsRecipe(PlayerBase player, ItemBase tool, ItemBase ingredient, ItemBase result, bool hadShock, int powerType, bool wrongTool, float wetness)
     {
         if (!player) return;
         
-        string item1Name = jrdn_FriendlyNames.GetItemFriendlyName(item1.GetType());
-        string item2Name = jrdn_FriendlyNames.GetItemFriendlyName(item2.GetType());
+        jrdn_gps_config cfg = GetJRDNConfig();
         
-        string title = "Items Too Wet";
-        string detail = "The " + item1Name + " and " + item2Name + " are too wet to combine. Dry them first!";
+        // If nothing happened, don't notify
+        if (!hadShock && !wrongTool && powerType == 0) return;
         
-        NotificationSystem.SendNotificationToPlayerExtended(player, 4.0, title, detail, "");
+        string title = "";
+        string message = "";
+        float duration = 5.0;
+        
+        // Build replacement map
+        ref map<string, string> replacements = new map<string, string>;
+        
+        if (tool)
+        {
+            toolCategory cat = GetToolCategory(tool);
+            string catName = GetToolCategoryName(cat);
+            replacements.Insert("tool", GetToolNoun(catName));
+        }
+        
+        if (ingredient)
+        {
+            replacements.Insert("ingredient", GetItemFriendlyName(ingredient.GetType()));
+        }
+        
+        if (result)
+        {
+            replacements.Insert("result", GetItemFriendlyName(result.GetType()));
+        }
+        
+        if (powerType > 0)
+        {
+            replacements.Insert("power", GetPowerSourceName(powerType));
+        }
+        
+        replacements.Insert("wetness", GetWetnessDescription(wetness));
+        
+        bool isWet = (wetness >= GameConstants.STATE_DAMP);
+        bool isHighPower = (powerType >= 2);
+        
+        // Select message template based on conditions
+        if (hadShock && powerType > 0 && wrongTool && result)
+        {
+            title = cfg.NotificationMessages.Title_Shock;
+            if (isWet)
+                message = BuildMessage(cfg.NotificationMessages.Shock_Power_Wet_WrongTool, replacements);
+            else
+                message = BuildMessage(cfg.NotificationMessages.Shock_Power_Dry_WrongTool, replacements);
+            duration = 7.0;
+        }
+        else if (hadShock && powerType > 0 && result)
+        {
+            title = cfg.NotificationMessages.Title_Shock;
+            if (isWet)
+                message = BuildMessage(cfg.NotificationMessages.Shock_Power_Wet, replacements);
+            else
+                message = BuildMessage(cfg.NotificationMessages.Shock_Power_Dry, replacements);
+            duration = 7.0;
+        }
+        else if (powerType > 0 && wrongTool && result)
+        {
+            title = cfg.NotificationMessages.Title_Damage;
+            message = BuildMessage(cfg.NotificationMessages.Power_WrongTool, replacements);
+            duration = 5.0;
+        }
+        else if (powerType > 0 && result)
+        {
+            title = cfg.NotificationMessages.Title_Damage;
+            message = BuildMessage(cfg.NotificationMessages.Power_Only, replacements);
+            duration = 5.0;
+        }
+        else if (wrongTool && result)
+        {
+            title = cfg.NotificationMessages.Title_WrongTool;
+            message = BuildMessage(cfg.NotificationMessages.Electronics_WrongTool_Only, replacements);
+            duration = 4.0;
+        }
+        
+        if (message != "")
+        {
+            NotificationSystem.SendNotificationToPlayerExtended(player, duration, title, message, "");
+        }
     }
 }

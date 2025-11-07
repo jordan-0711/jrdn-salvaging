@@ -75,60 +75,21 @@ toolCategory GetToolCategory(ItemBase tool)
     if (!tool) return toolCategory.TOOL_SMALL_BLADE;
     
     string toolName = tool.GetType();
+    jrdn_gps_config cfg = GetJRDNConfig();
+    jrdn_ToolCategoryAssignments cats = cfg.ToolCategories;
     
-    if (toolName == "KitchenKnife") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "SteakKnife") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "CombatKnife") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "HuntingKnife") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "Cleaver") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "AK_Bayonet") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "M9A1_Bayonet") return toolCategory.TOOL_SMALL_BLADE;
-    if (toolName == "SNAFU_Kabar") return toolCategory.TOOL_SMALL_BLADE;
+    // Check each category from config
+    if (cats.SMALL_BLADE && cats.SMALL_BLADE.Find(toolName) >= 0) return toolCategory.TOOL_SMALL_BLADE;
+    if (cats.LARGE_BLADE && cats.LARGE_BLADE.Find(toolName) >= 0) return toolCategory.TOOL_LARGE_BLADE;
+    if (cats.AXE && cats.AXE.Find(toolName) >= 0) return toolCategory.TOOL_AXE;
+    if (cats.SAW && cats.SAW.Find(toolName) >= 0) return toolCategory.TOOL_SAW;
+    if (cats.HAMMER && cats.HAMMER.Find(toolName) >= 0) return toolCategory.TOOL_HAMMER;
+    if (cats.UTILITY_SCREW && cats.UTILITY_SCREW.Find(toolName) >= 0) return toolCategory.TOOL_UTILITY_SCREW;
+    if (cats.UTILITY_WRENCH && cats.UTILITY_WRENCH.Find(toolName) >= 0) return toolCategory.TOOL_UTILITY_WRENCH;
+    if (cats.BLUNT && cats.BLUNT.Find(toolName) >= 0) return toolCategory.TOOL_BLUNT;
+    if (cats.LONG && cats.LONG.Find(toolName) >= 0) return toolCategory.TOOL_LONG;
     
-    if (toolName == "Msp_VorpalKnife") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "KukriKnife") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "FangeKnife") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "Mosin_Bayonet") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "SNAFU_SKS_Bayonet") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "Machete") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "CrudeMachete") return toolCategory.TOOL_LARGE_BLADE;
-    if (toolName == "OrientalMachete") return toolCategory.TOOL_LARGE_BLADE;
-    
-    if (toolName == "Hatchet") return toolCategory.TOOL_AXE;
-    if (toolName == "WoodAxe") return toolCategory.TOOL_AXE;
-    if (toolName == "FirefighterAxe") return toolCategory.TOOL_AXE;
-    if (toolName == "FirefighterAxe_Black") return toolCategory.TOOL_AXE;
-    if (toolName == "FirefighterAxe_Green") return toolCategory.TOOL_AXE;
-    if (toolName == "Pickaxe") return toolCategory.TOOL_AXE;
-    if (toolName == "Iceaxe") return toolCategory.TOOL_AXE;
-    
-    if (toolName == "HandSaw") return toolCategory.TOOL_SAW;
-    if (toolName == "Hacksaw") return toolCategory.TOOL_SAW;
-    
-    if (toolName == "Hammer") return toolCategory.TOOL_HAMMER;
-    if (toolName == "MeatTenderizer") return toolCategory.TOOL_HAMMER;
-    if (toolName == "SledgeHammer") return toolCategory.TOOL_HAMMER;
-    
-    if (toolName == "Screwdriver") return toolCategory.TOOL_UTILITY_SCREW;
-    if (toolName == "Pliers") return toolCategory.TOOL_UTILITY_SCREW;
-    if (toolName == "Crowbar") return toolCategory.TOOL_UTILITY_SCREW;
-    if (toolName == "LugWrench") return toolCategory.TOOL_UTILITY_WRENCH;
-    if (toolName == "Wrench") return toolCategory.TOOL_UTILITY_WRENCH;
-    if (toolName == "PipeWrench") return toolCategory.TOOL_UTILITY_WRENCH;
-    
-    if (toolName == "BaseballBat") return toolCategory.TOOL_BLUNT;
-    if (toolName == "BarbedBaseballBat") return toolCategory.TOOL_BLUNT;
-    if (toolName == "NailedBaseballBat") return toolCategory.TOOL_BLUNT;
-    if (toolName == "FryingPan") return toolCategory.TOOL_BLUNT;
-    if (toolName == "Mace") return toolCategory.TOOL_BLUNT;
-    if (toolName == "Pipe") return toolCategory.TOOL_BLUNT;
-    
-    if (toolName == "FarmingHoe") return toolCategory.TOOL_LONG;
-    if (toolName == "Shovel") return toolCategory.TOOL_LONG;
-    if (toolName == "FieldShovel") return toolCategory.TOOL_LONG;
-    if (toolName == "Pitchfork") return toolCategory.TOOL_LONG;
-    if (toolName == "Sword") return toolCategory.TOOL_LONG;
-    
+    // Default fallback
     return toolCategory.TOOL_SMALL_BLADE;
 }
 
@@ -394,11 +355,23 @@ class jrdn_BleedSystem
     }
 }
 
-static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferredTools, float wetness, string recipeName)
+// Context tracking class for recipe execution
+class jrdn_RecipeContext
 {
-    if (!player) return;
-    if (!tool) return;
-    if (wetness < GameConstants.STATE_DAMP) return;
+    bool hadCut = false;
+    bool hadShock = false;
+    bool wrongTool = false;
+    int powerType = 0;
+    string bleedLocation = "";
+}
+
+static string ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferredTools, float wetness, string recipeName, out string bleedLocation)
+{
+    bleedLocation = "";
+    
+    if (!player) return bleedLocation;
+    if (!tool) return bleedLocation;
+    if (wetness < GameConstants.STATE_DAMP) return bleedLocation;
     
     jrdn_gps_config cfg = GetJRDNConfig();
     
@@ -436,7 +409,7 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     if (roll > finalChance)
     {
         jrdn_DbgPenalty("  No cut (rolled " + (roll * 100.0) + "%)");
-        return;
+        return bleedLocation;
     }
     
     jrdn_DbgPenalty("  CUT! (rolled " + (roll * 100.0) + "%)");
@@ -448,7 +421,7 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
         jrdn_DbgPenalty("  Applied " + damage + " damage to player");
     }
     
-    string bleedLocation = jrdn_BleedSystem.GetRandomBleedLocation(usedCat);
+    bleedLocation = jrdn_BleedSystem.GetRandomBleedLocation(usedCat);
     if (bleedLocation != "")
     {
         bool bled = jrdn_BleedSystem.ApplyBleed(player, bleedLocation);
@@ -457,21 +430,23 @@ static void ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferre
     }
     
     jrdn_helpers.DropItemInHands(player);
-    jrdn_notification_helper.NotifyCut(player, wetness, tool, target, bleedLocation, null);
     jrdn_DbgRecipe("--------------------");
-
+    
+    return bleedLocation;
 }
 
-static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, array<int> preferredTools, float wetness, string recipeName)
+static bool ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, array<int> preferredTools, float wetness, string recipeName, out int powerType)
 {
-    if (!player) return;
-    if (!target) return;
+    powerType = 0;
     
-    int powerType = jrdn_helpers.DetectPowerSource(target);
+    if (!player) return false;
+    if (!target) return false;
+    
+    powerType = jrdn_helpers.DetectPowerSource(target);
     if (powerType == 0)
     {
         jrdn_DbgPower("  No power source detected");
-        return;
+        return false;
     }
     
     jrdn_gps_config cfg = GetJRDNConfig();
@@ -552,7 +527,8 @@ static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     
     jrdn_helpers.DropItemInHands(player);
     jrdn_DbgPenalty("--------------------");
-
+    
+    return true;
 }
 
 static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, array<int> preferredTools, string recipeName)
@@ -576,20 +552,44 @@ static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, arra
     wetCheck.Insert(target);
     float wetness = jrdn_helpers.GetHighestWetness(wetCheck);
 
-    jrdn_DbgRecipe(recipeName + " DEBUG START --------------------");
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
     jrdn_DbgRecipe("  Tool: " + tool.GetType());
     jrdn_DbgRecipe("  Target: " + target.GetType());
     jrdn_DbgRecipe("  Health: " + targetHealth + "/" + targetMaxHealth);
     jrdn_DbgRecipe("  Wet: " + wetness);
 
-    ProcessCutRisk(player, tool, preferredTools, wetness, recipeName);
+    // Track what happened
+    ref jrdn_RecipeContext ctx = new jrdn_RecipeContext;
     
+    // Check for cut
+    string bleedLoc = "";
+    bleedLoc = ProcessCutRisk(player, tool, preferredTools, wetness, recipeName, bleedLoc);
+    if (bleedLoc != "")
+    {
+        ctx.hadCut = true;
+        ctx.bleedLocation = bleedLoc;
+    }
+    
+    // Check if wrong tool
+    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
+    if (!isPreferred)
+    {
+        ctx.wrongTool = true;
+    }
+    
+    // Apply penalties to results
     if (results && results.Count() > 0)
     {
         ApplyCuttingResultPenalties(results, tool, preferredTools, wetness, recipeName);
     }
 
-    jrdn_DbgRecipe(recipeName + " DEBUG END ----------------------");
+    // Send notification at the end
+    ItemBase resultItem = null;
+    if (results && results.Count() > 0) resultItem = results[0];
+    
+    jrdn_notification_helper.NotifyCuttingRecipe(player, tool, target, resultItem, ctx.hadCut, ctx.bleedLocation, ctx.wrongTool, wetness);
+
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
 }
 
 static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, array<int> preferredTools, TStringArray possibleResults, string recipeName)
@@ -613,7 +613,7 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
     wetCheck.Insert(target);
     float wetness = jrdn_helpers.GetHighestWetness(wetCheck);
 
-    jrdn_DbgRecipe(recipeName + " DEBUG START --------------------");
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
     jrdn_DbgRecipe("  Tool: " + tool.GetType());
     jrdn_DbgRecipe("  Target: " + target.GetType());
     jrdn_DbgRecipe("  Health: " + targetHealth + "/" + targetMaxHealth);
@@ -628,7 +628,21 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
         jrdn_DbgRecipe("  Random result picked: " + pickedClass);
     }
     
-    ProcessShockRisk(player, tool, target, preferredTools, wetness, recipeName);
+    // Track what happened
+    ref jrdn_RecipeContext ctx = new jrdn_RecipeContext;
+    
+    // Check for shock
+    int pType = 0;
+    bool hadShock = ProcessShockRisk(player, tool, target, preferredTools, wetness, recipeName, pType);
+    ctx.hadShock = hadShock;
+    ctx.powerType = pType;
+    
+    // Check if wrong tool
+    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
+    if (!isPreferred)
+    {
+        ctx.wrongTool = true;
+    }
     
     ItemBase spawnedResult = null;
     if (pickedClass != "")
@@ -649,8 +663,11 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
         ItemBase placeholder = results[0];
         if (placeholder) placeholder.Delete();
     }
-    jrdn_DbgRecipe(recipeName + " DEBUG END ----------------------");
-
+    
+    // Send notification at the end
+    jrdn_notification_helper.NotifyElectronicsRecipe(player, tool, target, spawnedResult, ctx.hadShock, ctx.powerType, ctx.wrongTool, wetness);
+    
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
 }
 
 static bool CanCombineWet(ItemBase ingredient0, ItemBase ingredient1)
@@ -680,7 +697,7 @@ static void ProcessCombineRecipe(ItemBase ingredients[], PlayerBase player, arra
     if (!ingredients) return;
     if (!results) return;
     
-    jrdn_DbgRecipe(recipeName + " DEBUG START --------------------");
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
     
     array<ItemBase> wetCheck = new array<ItemBase>;
     wetCheck.Insert(ingredients[0]);
@@ -699,8 +716,7 @@ static void ProcessCombineRecipe(ItemBase ingredients[], PlayerBase player, arra
         }
     }
     
-    jrdn_DbgRecipe(recipeName + " DEBUG END ----------------------");
-
+    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
 }
 
 static void ApplyCuttingResultPenalties(array<ItemBase> results, ItemBase tool, array<int> preferredTools, float wetness, string recipeName)
