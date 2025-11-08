@@ -1,9 +1,3 @@
-// ===================================================================================
-// jrdn_gps_utils.c
-// Core helper functions for JRDN GPS Salvaging mod
-// ===================================================================================
-
-// Debug logging helpers
 static void jrdn_Dbg(string msg)
 {
     if (!GetJRDNConfig().DebugSettings.Enable) return;
@@ -89,7 +83,6 @@ toolCategory GetToolCategory(ItemBase tool)
     if (cats.BLUNT && cats.BLUNT.Find(toolName) >= 0) return toolCategory.TOOL_BLUNT;
     if (cats.LONG && cats.LONG.Find(toolName) >= 0) return toolCategory.TOOL_LONG;
     
-    // Default fallback
     return toolCategory.TOOL_SMALL_BLADE;
 }
 
@@ -135,22 +128,6 @@ class jrdn_helpers
         }
         
         return highest;
-    }
-    
-    static bool IsPreferredTool(ItemBase tool, array<int> preferredCategories)
-    {
-        if (!tool) return false;
-        if (!preferredCategories) return false;
-        
-        toolCategory usedCat = GetToolCategory(tool);
-        
-        for (int i = 0; i < preferredCategories.Count(); i++)
-        {
-            if (usedCat == preferredCategories[i])
-                return true;
-        }
-        
-        return false;
     }
     
     static bool HasGloves(PlayerBase player)
@@ -210,14 +187,14 @@ class jrdn_helpers
         
         if (player.ServerDropEntity(inHands))
         {
-            jrdn_DbgPower("  SOUND: Sending combatknife_drop_SoundSet to client");
+            jrdn_DbgPower("| > SOUND: Sending combatknife_drop_SoundSet to client");
             PlaySoundOnClients(player, "combatknife_drop_SoundSet");
             
-            jrdn_DbgPower("  Dropped tool from hands: " + inHands.GetType());
+            jrdn_DbgPower("| > Dropped tool from hands: " + inHands.GetType());
         }
         else
         {
-            jrdn_DbgPower("  FAILED to drop tool: " + inHands.GetType());
+            jrdn_DbgPower("| > FAILED to drop tool: " + inHands.GetType());
         }
     }
 }
@@ -355,39 +332,25 @@ class jrdn_BleedSystem
     }
 }
 
-// Context tracking class for recipe execution
-class jrdn_RecipeContext
+static void ProcessCutRisk(PlayerBase player, ItemBase tool, float wetness, string recipeName, out bool hadCut, out string bleedLocation)
 {
-    bool hadCut = false;
-    bool hadShock = false;
-    bool wrongTool = false;
-    int powerType = 0;
-    string bleedLocation = "";
-}
-
-static string ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> preferredTools, float wetness, string recipeName, out string bleedLocation)
-{
+    hadCut = false;
     bleedLocation = "";
     
-    if (!player) return bleedLocation;
-    if (!tool) return bleedLocation;
-    if (wetness < GameConstants.STATE_DAMP) return bleedLocation;
+    if (!player) return;
+    if (!tool) return;
+    if (wetness < GameConstants.STATE_DAMP) return;
     
     jrdn_gps_config cfg = GetJRDNConfig();
     
     toolCategory usedCat = GetToolCategory(tool);
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
     bool hasGloves = jrdn_helpers.HasGloves(player);
     
-    jrdn_DbgRecipe("--------------------");
-    jrdn_DbgRecipe("Cut risk check for " + recipeName);
-    jrdn_DbgTool("  Tool: " + tool.GetType() + " (" + GetToolCategoryName(usedCat) + ")");
-    jrdn_DbgTool("  Preferred: " + isPreferred);
-    jrdn_DbgTool("  Gloves: " + hasGloves);
-    jrdn_DbgWet("  Wetness: " + wetness + " (threshold: " + GameConstants.STATE_DAMP + ")");
-    
-    float toolMul = cfg.ToolSettings.preferredMultiplier;
-    if (!isPreferred) toolMul = cfg.ToolSettings.notPreferredMultiplier;
+    jrdn_DbgRecipe(">>>>>>>>>>>>>>>>>>>>");
+    jrdn_DbgRecipe("| Cut risk check for " + recipeName);
+    jrdn_DbgTool("| > Tool: " + tool.GetType() + " (" + GetToolCategoryName(usedCat) + ")");
+    jrdn_DbgTool("| > Gloves: " + hasGloves);
+    jrdn_DbgWet("| > Wetness: " + wetness + " (threshold: " + GameConstants.STATE_DAMP + ")");
     
     float gloveMitigation = 0.0;
     if (hasGloves) gloveMitigation = cfg.GearSettings.gloveMitigation;
@@ -396,29 +359,28 @@ static string ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> prefer
     float wetScale = cfg.CutSettings.wetnessScale;
     
     float finalChance = baseChance * (1.0 + (wetness * wetScale));
-    finalChance = finalChance * toolMul;
     finalChance = finalChance * (1.0 - gloveMitigation);
     if (finalChance > 1.0) finalChance = 1.0;
     
-    jrdn_DbgPenalty("  Cut chance: " + (finalChance * 100.0) + "%");
-    jrdn_DbgPenalty("  Base: " + (baseChance * 100.0) + "%");
-    jrdn_DbgPenalty("  Tool multiplier: " + toolMul + "x");
-    jrdn_DbgPenalty("  Glove mitigation: " + (gloveMitigation * 100.0) + "%");
+    jrdn_DbgPenalty("| > Cut chance: " + (finalChance * 100.0) + "%");
+    jrdn_DbgPenalty("| > Base: " + (baseChance * 100.0) + "%");
+    jrdn_DbgPenalty("| > Glove mitigation: " + (gloveMitigation * 100.0) + "%");
     
     float roll = Math.RandomFloat(0.0, 1.0);
     if (roll > finalChance)
     {
-        jrdn_DbgPenalty("  No cut (rolled " + (roll * 100.0) + "%)");
-        return bleedLocation;
+        jrdn_DbgPenalty("| > No cut (rolled " + (roll * 100.0) + "%)");
+        return;
     }
     
-    jrdn_DbgPenalty("  CUT! (rolled " + (roll * 100.0) + "%)");
+    jrdn_DbgPenalty("| > CUT! (rolled " + (roll * 100.0) + "%)");
+    hadCut = true;
     
-    float damage = cfg.CutSettings.healthPenalty * toolMul * (1.0 - gloveMitigation);
+    float damage = cfg.CutSettings.healthPenalty * (1.0 - gloveMitigation);
     if (damage > 0.0)
     {
         player.AddHealth("", "", -damage);
-        jrdn_DbgPenalty("  Applied " + damage + " damage to player");
+        jrdn_DbgPenalty("| > Applied " + damage + " damage to player");
     }
     
     bleedLocation = jrdn_BleedSystem.GetRandomBleedLocation(usedCat);
@@ -426,28 +388,29 @@ static string ProcessCutRisk(PlayerBase player, ItemBase tool, array<int> prefer
     {
         bool bled = jrdn_BleedSystem.ApplyBleed(player, bleedLocation);
         if (bled)
-            jrdn_DbgPenalty("  Applied bleed at: " + bleedLocation);
+            jrdn_DbgPenalty("| > Applied bleed at: " + bleedLocation);
     }
     
     jrdn_helpers.DropItemInHands(player);
-    jrdn_DbgRecipe("--------------------");
-    
-    return bleedLocation;
+    jrdn_DbgRecipe(">>>>>>>>>>>>>>>>>>>>");
 }
 
-static bool ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, array<int> preferredTools, float wetness, string recipeName, out int powerType)
+static void ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, float wetness, string recipeName, out bool hadShock, out int powerType)
 {
+    hadShock = false;
     powerType = 0;
     
-    if (!player) return false;
-    if (!target) return false;
+    if (!player) return;
+    if (!target) return;
     
     powerType = jrdn_helpers.DetectPowerSource(target);
     if (powerType == 0)
     {
-        jrdn_DbgPower("  No power source detected");
-        return false;
+        jrdn_DbgPower("| > No power source detected");
+        return;
     }
+    
+    hadShock = true;
     
     jrdn_gps_config cfg = GetJRDNConfig();
     
@@ -456,16 +419,13 @@ static bool ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     if (powerType == 2) powerName = "CarBattery";
     if (powerType == 3) powerName = "TruckBattery";
 
-    jrdn_DbgPenalty("--------------------");
-    jrdn_DbgRecipe("Shock risk check for " + recipeName);
-    jrdn_DbgPower("  Power source: " + powerName + " (type " + powerType + ")");
-    jrdn_DbgWet("  Wetness: " + wetness);
+    jrdn_DbgPenalty(">>>>>>>>>>>>>>>>>>>>");
+    jrdn_DbgRecipe("| Shock risk check for " + recipeName);
+    jrdn_DbgPower("| > Power source: " + powerName + " (type " + powerType + ")");
+    jrdn_DbgWet("| > Wetness: " + wetness);
     
     toolCategory usedCat = GetToolCategory(tool);
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
-    
-    jrdn_DbgTool("  Tool: " + tool.GetType() + " (" + GetToolCategoryName(usedCat) + ")");
-    jrdn_DbgTool("  Preferred: " + isPreferred);
+    jrdn_DbgTool("| > Tool: " + tool.GetType() + " (" + GetToolCategoryName(usedCat) + ")");
     
     float baseShock = 0.0;
     if (powerType == 1) baseShock = cfg.PowerSettings.base9V;
@@ -482,12 +442,9 @@ static bool ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
     else if (wetness >= GameConstants.STATE_DRENCHED)
         wetMul = cfg.PowerSettings.multiplyDrenched;
     
-    float toolMul = cfg.ToolSettings.preferredMultiplier;
-    if (!isPreferred) toolMul = cfg.ToolSettings.notPreferredMultiplier;
-    
     if (powerType == 2 || powerType == 3)
     {
-        jrdn_DbgPower("  SOUND: Sending electricFenceSpark5 to client");
+        jrdn_DbgPower("| > SOUND: Sending defibrillator_shock_SoundSet to client");
         PlaySoundOnClients(player, "defibrillator_shock_SoundSet");
         
         float currentShock = player.GetHealth("", "Shock");
@@ -496,42 +453,35 @@ static bool ProcessShockRisk(PlayerBase player, ItemBase tool, ItemBase target, 
         float targetShock = cfg.PowerSettings.baseDry;
         if (wetness >= GameConstants.STATE_WET) targetShock = cfg.PowerSettings.baseWet;
         
-        if (!isPreferred)
-        {
-            targetShock = targetShock + cfg.ToolSettings.notPreferredFixed;
-        }
-        
         if (targetShock < 0.0) targetShock = 0.0;
         if (targetShock > maxShock) targetShock = maxShock;
         
         float delta = targetShock - currentShock;
         
-        jrdn_DbgPower("  Car/Truck SET shock: " + currentShock + "->" + targetShock + " (delta:" + delta + ")");
+        jrdn_DbgPower("| > Car/Truck SET shock: " + currentShock + "->" + targetShock + " (delta:" + delta + ")");
         
         player.SetHealth("", "Shock", targetShock);
     }
     else
     {
-        jrdn_DbgPower("  SOUND: Sending ReinDeerRoarShort_7_SoundSet to client");
-        PlaySoundOnClients(player, "ReinDeerRoarShort_7_SoundSet");
+        jrdn_DbgPower("| > SOUND: Sending defibrillator_shock_SoundSet to client");
+        PlaySoundOnClients(player, "defibrillator_shock_SoundSet");
         
-        float shockDamage = baseShock * wetMul * toolMul;
-        jrdn_DbgPower("  9V shock: Base:" + baseShock + " WetMul:" + wetMul + "x ToolMul:" + toolMul + "x Damage:" + shockDamage);
+        float shockDamage = baseShock * wetMul;
+        jrdn_DbgPower("| > 9V shock: Base:" + baseShock + " WetMul:" + wetMul + "x Damage:" + shockDamage);
         player.AddHealth("", "Shock", -shockDamage);
 
         float shockAfter = player.GetHealth("", "Shock");
-        jrdn_DbgPower("  Player shock after: " + shockAfter + "/100");
+        jrdn_DbgPower("| > Player shock after: " + shockAfter + "/100");
     }
     
-    jrdn_DbgPower("  Applied shock to player");
+    jrdn_DbgPower("| > Applied shock to player");
     
     jrdn_helpers.DropItemInHands(player);
-    jrdn_DbgPenalty("--------------------");
-    
-    return true;
+    jrdn_DbgPenalty(">>>>>>>>>>>>>>>>>>>>");
 }
 
-static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, array<int> preferredTools, string recipeName)
+static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, string recipeName)
 {
     if (!GetGame() || !GetGame().IsServer()) return;
     if (!player) return;
@@ -542,7 +492,7 @@ static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, arra
     
     if (!tool || !target)
     {
-        jrdn_DbgRecipe("Recipe aborted: missing tool or target");
+        jrdn_DbgRecipe("| > Recipe aborted: missing tool or target");
         return;
     }
     
@@ -552,47 +502,40 @@ static void ProcessCuttingRecipe(ItemBase ingredients[], PlayerBase player, arra
     wetCheck.Insert(target);
     float wetness = jrdn_helpers.GetHighestWetness(wetCheck);
 
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
-    jrdn_DbgRecipe("  Tool: " + tool.GetType());
-    jrdn_DbgRecipe("  Target: " + target.GetType());
-    jrdn_DbgRecipe("  Health: " + targetHealth + "/" + targetMaxHealth);
-    jrdn_DbgRecipe("  Wet: " + wetness);
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG START >>>>>>>>>>>>>>>");
+    jrdn_DbgRecipe("| > Tool: " + tool.GetType());
+    jrdn_DbgRecipe("| > Target: " + target.GetType());
+    jrdn_DbgRecipe("| > Health: " + targetHealth + "/" + targetMaxHealth);
+    jrdn_DbgRecipe("| > Wet: " + wetness);
 
     // Track what happened
-    ref jrdn_RecipeContext ctx = new jrdn_RecipeContext;
+    bool hadCut = false;
+    string bleedLocation = "";
+    bool hadResultDamage = false;
     
     // Check for cut
-    string bleedLoc = "";
-    bleedLoc = ProcessCutRisk(player, tool, preferredTools, wetness, recipeName, bleedLoc);
-    if (bleedLoc != "")
-    {
-        ctx.hadCut = true;
-        ctx.bleedLocation = bleedLoc;
-    }
+    ProcessCutRisk(player, tool, wetness, recipeName, hadCut, bleedLocation);
     
-    // Check if wrong tool
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
-    if (!isPreferred)
-    {
-        ctx.wrongTool = true;
-    }
-    
-    // Apply penalties to results
+    // Apply penalties to results and check if they were damaged
     if (results && results.Count() > 0)
     {
-        ApplyCuttingResultPenalties(results, tool, preferredTools, wetness, recipeName);
+        float beforeHealth = results[0].GetHealth("", "");
+        ApplyCuttingResultPenalties(results, wetness, recipeName);
+        float afterHealth = results[0].GetHealth("", "");
+        
+        if (afterHealth < beforeHealth)
+        {
+            hadResultDamage = true;
+        }
     }
 
-    // Send notification at the end
-    ItemBase resultItem = null;
-    if (results && results.Count() > 0) resultItem = results[0];
-    
-    jrdn_notification_helper.NotifyCuttingRecipe(player, tool, target, resultItem, ctx.hadCut, ctx.bleedLocation, ctx.wrongTool, wetness);
+    // Send ONE notification at the end
+    jrdn_notification_helper.NotifyCuttingRecipe(player, hadCut, bleedLocation, hadResultDamage, wetness);
 
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG END >>>>>>>>>>>>>>>");
 }
 
-static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, array<int> preferredTools, TStringArray possibleResults, string recipeName)
+static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, TStringArray possibleResults, string recipeName)
 {
     if (!GetGame() || !GetGame().IsServer()) return;
     if (!player) return;
@@ -603,7 +546,7 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
     
     if (!tool || !target)
     {
-        jrdn_DbgRecipe("Recipe aborted: missing tool or target");
+        jrdn_DbgRecipe("| > Recipe aborted: missing tool or target");
         return;
     }
     
@@ -613,36 +556,26 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
     wetCheck.Insert(target);
     float wetness = jrdn_helpers.GetHighestWetness(wetCheck);
 
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
-    jrdn_DbgRecipe("  Tool: " + tool.GetType());
-    jrdn_DbgRecipe("  Target: " + target.GetType());
-    jrdn_DbgRecipe("  Health: " + targetHealth + "/" + targetMaxHealth);
-    jrdn_DbgRecipe("  Wet: " + wetness);
-    jrdn_DbgPenalty("--------------------");
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG START >>>>>>>>>>>>>>>");
+    jrdn_DbgRecipe("| > Tool: " + tool.GetType());
+    jrdn_DbgRecipe("| > Target: " + target.GetType());
+    jrdn_DbgRecipe("| > Health: " + targetHealth + "/" + targetMaxHealth);
+    jrdn_DbgRecipe("| > Wet: " + wetness);
+    jrdn_DbgPenalty(">>>>>>>>>>>>>>>>>>>>");
     
     string pickedClass = "";
     if (possibleResults && possibleResults.Count() > 0)
     {
         int idx = Math.RandomInt(0, possibleResults.Count());
         pickedClass = possibleResults.Get(idx);
-        jrdn_DbgRecipe("  Random result picked: " + pickedClass);
+        jrdn_DbgRecipe("| > Random result picked: " + pickedClass);
     }
     
-    // Track what happened
-    ref jrdn_RecipeContext ctx = new jrdn_RecipeContext;
+    bool hadShock = false;
+    int powerType = 0;
+    bool hadResultDamage = false;
     
-    // Check for shock
-    int pType = 0;
-    bool hadShock = ProcessShockRisk(player, tool, target, preferredTools, wetness, recipeName, pType);
-    ctx.hadShock = hadShock;
-    ctx.powerType = pType;
-    
-    // Check if wrong tool
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
-    if (!isPreferred)
-    {
-        ctx.wrongTool = true;
-    }
+    ProcessShockRisk(player, tool, target, wetness, recipeName, hadShock, powerType);
     
     ItemBase spawnedResult = null;
     if (pickedClass != "")
@@ -650,11 +583,19 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
         spawnedResult = SpawnResultAtFeet(player, pickedClass, target, wetness);
         if (spawnedResult)
         {
-            jrdn_DbgRecipe("  Spawned result: " + pickedClass);
+            jrdn_DbgRecipe("| > Spawned result: " + pickedClass);
+            
+            float beforeHealth = spawnedResult.GetHealth("", "");
             
             array<ItemBase> resultArray = new array<ItemBase>;
             resultArray.Insert(spawnedResult);
-            ApplyElectronicsResultPenalties(resultArray, tool, preferredTools, wetness, target, recipeName);
+            ApplyElectronicsResultPenalties(resultArray, wetness, target, recipeName);
+            
+            float afterHealth = spawnedResult.GetHealth("", "");
+            if (afterHealth < beforeHealth || spawnedResult.IsRuined())
+            {
+                hadResultDamage = true;
+            }
         }
     }
     
@@ -664,10 +605,10 @@ static void ProcessElectronicsRecipe(ItemBase ingredients[], PlayerBase player, 
         if (placeholder) placeholder.Delete();
     }
     
-    // Send notification at the end
-    jrdn_notification_helper.NotifyElectronicsRecipe(player, tool, target, spawnedResult, ctx.hadShock, ctx.powerType, ctx.wrongTool, wetness);
+    // Send ONE notification at the end
+    jrdn_notification_helper.NotifyElectronicsRecipe(player, hadShock, powerType, hadResultDamage, wetness);
     
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG END >>>>>>>>>>>>>>>");
 }
 
 static bool CanCombineWet(ItemBase ingredient0, ItemBase ingredient1)
@@ -697,14 +638,14 @@ static void ProcessCombineRecipe(ItemBase ingredients[], PlayerBase player, arra
     if (!ingredients) return;
     if (!results) return;
     
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG START >>>>>>>>>");
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG START >>>>>>>>>>>>>>>");
     
     array<ItemBase> wetCheck = new array<ItemBase>;
     wetCheck.Insert(ingredients[0]);
     wetCheck.Insert(ingredients[1]);
     
     float wetness = jrdn_helpers.GetHighestWetness(wetCheck);
-    jrdn_DbgWet("  Transferring wetness: " + wetness);
+    jrdn_DbgWet("| > Transferring wetness: " + wetness);
     
     for (int i = 0; i < results.Count(); i++)
     {
@@ -712,43 +653,46 @@ static void ProcessCombineRecipe(ItemBase ingredients[], PlayerBase player, arra
         if (result)
         {
             result.SetWet(wetness);
-            jrdn_DbgRecipe("  Applied wetness to result");
+            jrdn_DbgRecipe("| > Applied wetness to result");
         }
     }
     
-    jrdn_DbgRecipe("<<<<<<<<<< " + recipeName + " DEBUG END >>>>>>>>>");
+    jrdn_DbgRecipe("<<<<<<<<<<<<<<< " + recipeName + "  DEBUG END >>>>>>>>>>>>>>>");
 }
 
-static void ApplyCuttingResultPenalties(array<ItemBase> results, ItemBase tool, array<int> preferredTools, float wetness, string recipeName)
+// CHANGED: Now uses direct percentage damage based on wetness level
+static void ApplyCuttingResultPenalties(array<ItemBase> results, float wetness, string recipeName)
 {
     if (!results) return;
     
     jrdn_gps_config cfg = GetJRDNConfig();
     
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
+    // Determine damage percentage based on wetness level
+    float damagePercent = 0.0;
+    string wetnessLevel = "dry";
     
-    float wetPenalty = 0.0;
-    if (wetness >= GameConstants.STATE_DAMP)
+    if (wetness >= GameConstants.STATE_DRENCHED)
     {
-        float scaled = wetness * cfg.ResultSettings.wetPenaltyScale;
-        if (scaled < 0.0) scaled = 0.0;
-        float maxP = cfg.ResultSettings.wetPenaltyMax;
-        if (scaled > maxP) scaled = maxP;
-        wetPenalty = scaled;
+        damagePercent = cfg.ResultSettings.damageDrenched;
+        wetnessLevel = "drenched";
     }
-    
-    float wrongToolPenalty = 0.0;
-    if (!isPreferred) wrongToolPenalty = cfg.ResultSettings.wrongToolPenalty;
-    
-    float totalPenalty = wetPenalty + wrongToolPenalty;
+    else if (wetness >= GameConstants.STATE_SOAKING_WET)
+    {
+        damagePercent = cfg.ResultSettings.damageSoaking;
+        wetnessLevel = "soaking";
+    }
+    else if (wetness >= GameConstants.STATE_WET)
+    {
+        damagePercent = cfg.ResultSettings.damageWet;
+        wetnessLevel = "wet";
+    }
 
-    jrdn_DbgPenalty("--------------------");
-    jrdn_DbgPenalty(recipeName + " penalties:");
-    jrdn_DbgPenalty("  Wet penalty: " + wetPenalty);
-    jrdn_DbgPenalty("  Wrong tool penalty: " + wrongToolPenalty);
-    jrdn_DbgPenalty("  Total: " + totalPenalty);
+    jrdn_DbgPenalty(">>>>>>>>>>>>>>>>>>>>");
+    jrdn_DbgPenalty("| " + recipeName + " penalties:");
+    jrdn_DbgPenalty("| > Wetness level: " + wetnessLevel + " (" + wetness + ")");
+    jrdn_DbgPenalty("| > Damage percent: " + damagePercent + "%");
     
-    if (totalPenalty <= 0.0) return;
+    if (damagePercent <= 0.0) return;
     
     for (int i = 0; i < results.Count(); i++)
     {
@@ -757,59 +701,60 @@ static void ApplyCuttingResultPenalties(array<ItemBase> results, ItemBase tool, 
         
         float beforeHealth = result.GetHealth("", "");
         float maxHealth = result.GetMaxHealth("", "");
-        float healthPercent = (beforeHealth / maxHealth) * 100.0;
-        float targetHealth = beforeHealth;
         
-        if (totalPenalty > 0.0)
-        {
-            // Drop by 1 quality level based on percentage
-            if (healthPercent >= 75.0) targetHealth = maxHealth * 0.74; // Pristine -> Worn
-            else if (healthPercent >= 50.0) targetHealth = maxHealth * 0.49; // Worn -> Damaged
-            else if (healthPercent >= 25.0) targetHealth = maxHealth * 0.24; // Damaged -> Badly Damaged
-            else if (healthPercent > 0.0) targetHealth = 0.0; // Badly Damaged -> Ruined
-        }
+        // Apply percentage damage
+        float damageAmount = beforeHealth * (damagePercent / 100.0);
+        float targetHealth = beforeHealth - damageAmount;
+        if (targetHealth < 0.0) targetHealth = 0.0;
         
         result.SetHealth("", "", targetHealth);
         result.SetWet(wetness);
         float afterHealth = result.GetHealth("", "");
-        jrdn_DbgPenalty("  Result " + i + " health: " + beforeHealth + " -> " + afterHealth + " (" + healthPercent + "%) wet: " + wetness);
+        
+        float actualDamagePercent = 0.0;
+        if (beforeHealth > 0.0)
+        {
+            actualDamagePercent = ((beforeHealth - afterHealth) / beforeHealth) * 100.0;
+        }
+        
+        jrdn_DbgPenalty("| > Result " + i + " health: " + beforeHealth + " -> " + afterHealth + " (-" + actualDamagePercent + "%) wet: " + wetness);
     }
 }
 
-static void ApplyElectronicsResultPenalties(array<ItemBase> results, ItemBase tool, array<int> preferredTools, float wetness, ItemBase target, string recipeName)
+// CHANGED: Now uses direct percentage damage based on wetness level
+static void ApplyElectronicsResultPenalties(array<ItemBase> results, float wetness, ItemBase target, string recipeName)
 {
     if (!results) return;
     
     jrdn_gps_config cfg = GetJRDNConfig();
     
-    bool isPreferred = jrdn_helpers.IsPreferredTool(tool, preferredTools);
     int powerType = jrdn_helpers.DetectPowerSource(target);
     
-    float wetPenalty = 0.0;
-    if (wetness >= GameConstants.STATE_DAMP)
+    // Determine damage percentage based on wetness level
+    float damagePercent = 0.0;
+    string wetnessLevel = "dry";
+    
+    if (wetness >= GameConstants.STATE_DRENCHED)
     {
-        float scaled = wetness * cfg.ResultSettings.wetPenaltyScale;
-        if (scaled < 0.0) scaled = 0.0;
-        float maxP = cfg.ResultSettings.wetPenaltyMax;
-        if (scaled > maxP) scaled = maxP;
-        wetPenalty = scaled;
+        damagePercent = cfg.ResultSettings.damageDrenched;
+        wetnessLevel = "drenched";
     }
-    
-    float wrongToolPenalty = 0.0;
-    if (!isPreferred) wrongToolPenalty = cfg.ResultSettings.wrongToolPenalty;
-    
-    float poweredPenalty = 0.0;
-    if (powerType > 0) poweredPenalty = cfg.ResultSettings.poweredPenalty;
-    
-    float totalPenalty = wetPenalty + wrongToolPenalty + poweredPenalty;
+    else if (wetness >= GameConstants.STATE_SOAKING_WET)
+    {
+        damagePercent = cfg.ResultSettings.damageSoaking;
+        wetnessLevel = "soaking";
+    }
+    else if (wetness >= GameConstants.STATE_WET)
+    {
+        damagePercent = cfg.ResultSettings.damageWet;
+        wetnessLevel = "wet";
+    }
 
-    jrdn_DbgPenalty("--------------------");
-    jrdn_DbgPenalty(recipeName + " penalties:");
-    jrdn_DbgPenalty("  Wet penalty: " + wetPenalty);
-    jrdn_DbgPenalty("  Wrong tool penalty: " + wrongToolPenalty);
-    jrdn_DbgPenalty("  Powered penalty: " + poweredPenalty);
-    jrdn_DbgPenalty("  Power type: " + powerType);
-    jrdn_DbgPenalty("  Total: " + totalPenalty);
+    jrdn_DbgPenalty(">>>>>>>>>>>>>>>>>>>>");
+    jrdn_DbgPenalty("| " + recipeName + " penalties:");
+    jrdn_DbgPenalty("| > Wetness level: " + wetnessLevel + " (" + wetness + ")");
+    jrdn_DbgPenalty("| > Damage percent: " + damagePercent + "%");
+    jrdn_DbgPenalty("| > Power type: " + powerType);
     
     for (int i = 0; i < results.Count(); i++)
     {
@@ -820,31 +765,35 @@ static void ApplyElectronicsResultPenalties(array<ItemBase> results, ItemBase to
         float maxHealth = result.GetMaxHealth("", "");
         float targetHealth = beforeHealth;
         
-        // Check ruin flags first
+        // Check for instant ruin conditions
         if (powerType == 2 && cfg.ResultSettings.ruinOnCarBattery)
         {
             targetHealth = 0.0;
-            jrdn_DbgPenalty("  Result RUINED by car battery flag");
+            jrdn_DbgPenalty("| > Result RUINED by car battery flag");
         }
         else if (powerType == 3 && cfg.ResultSettings.ruinOnTruckBattery)
         {
             targetHealth = 0.0;
-            jrdn_DbgPenalty("  Result RUINED by truck battery flag");
+            jrdn_DbgPenalty("| > Result RUINED by truck battery flag");
         }
-        else if (totalPenalty > 0.0)
+        else if (damagePercent > 0.0)
         {
-            // Drop by 1 quality level per penalty trigger
-            float healthPct = (beforeHealth / maxHealth) * 100.0;
-            
-            if (healthPct >= 75.0) targetHealth = maxHealth * 0.74; // Pristine -> Worn
-            else if (healthPct >= 50.0) targetHealth = maxHealth * 0.49; // Worn -> Damaged
-            else if (healthPct >= 25.0) targetHealth = maxHealth * 0.24; // Damaged -> Badly Damaged
-            else if (healthPct > 0.0) targetHealth = 0.0; // Badly Damaged -> Ruined
+            // Apply percentage damage
+            float damageAmount = beforeHealth * (damagePercent / 100.0);
+            targetHealth = beforeHealth - damageAmount;
+            if (targetHealth < 0.0) targetHealth = 0.0;
         }
         
         result.SetHealth("", "", targetHealth);
         float afterHealth = result.GetHealth("", "");
-        jrdn_DbgPenalty("  Result " + i + " health: " + beforeHealth + " -> " + afterHealth);
+        
+        float actualDamagePercent = 0.0;
+        if (beforeHealth > 0.0)
+        {
+            actualDamagePercent = ((beforeHealth - afterHealth) / beforeHealth) * 100.0;
+        }
+        
+        jrdn_DbgPenalty("| > Result " + i + " health: " + beforeHealth + " -> " + afterHealth + " (-" + actualDamagePercent + "%)");
     }
 }
 
@@ -873,12 +822,12 @@ static ItemBase SpawnResultAtFeet(PlayerBase player, string className, ItemBase 
             float spawnedMax = spawned.GetMaxHealth("", "");
             float newHealth = spawnedMax * healthPct;
             spawned.SetHealth("", "", newHealth);
-            jrdn_DbgRecipe("  Result inherited health: " + (healthPct * 100.0) + "%");
+            jrdn_DbgRecipe("| > Result inherited health: " + (healthPct * 100.0) + "%");
         }
     }
     
     spawned.SetWet(wetness);
-    jrdn_DbgRecipe("  Result wetness applied: " + wetness);
+    jrdn_DbgRecipe("| > Result wetness applied: " + wetness);
     
     return spawned;
 }

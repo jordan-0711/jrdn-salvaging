@@ -21,29 +21,27 @@ class salvageWires extends RecipeBase
         m_MinQuantityIngredient[1] = -1;
         m_MaxQuantityIngredient[1] = -1;
 
-        InsertIngredientEx(0, "SteakKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "KitchenKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "CombatKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "HuntingKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "Cleaver", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "AK_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "M9A1_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "SNAFU_Kabar", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "Msp_VorpalKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "KukriKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "FangeKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "Mosin_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "SNAFU_SKS_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "Machete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "CrudeMachete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
-        InsertIngredientEx(0, "OrientalMachete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING, true);
+        InsertIngredientEx(0, "SteakKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "KitchenKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "CombatKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "HuntingKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Cleaver", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "AK_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "M9A1_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "SNAFU_Kabar", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Msp_VorpalKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "KukriKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "FangeKnife", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Mosin_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "SNAFU_SKS_Bayonet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Machete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "CrudeMachete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "OrientalMachete", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "Hatchet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "WoodAxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe_Black", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe_Green", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
-        InsertIngredientEx(0, "Pickaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
-        InsertIngredientEx(0, "Iceaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "HandSaw", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "Hacksaw", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "Sword", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
@@ -82,12 +80,7 @@ class salvageWires extends RecipeBase
     override void Do(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, float specialty_weight)
     {
         super.Do(ingredients, player, results, specialty_weight);
-        
-        array<int> preferredTools = new array<int>;
-        preferredTools.Insert(toolCategory.TOOL_SMALL_BLADE);
-        preferredTools.Insert(toolCategory.TOOL_LARGE_BLADE);
-        
-        ProcessCuttingRecipe(ingredients, player, results, preferredTools, "salvageWires");
+        ProcessCuttingRecipe(ingredients, player, results, "salvageWires");
     }
 }
 
@@ -109,35 +102,18 @@ class salvagePCBCasing extends RecipeBase
         m_MinQuantityIngredient[1] = -1;
         m_MaxQuantityIngredient[1] = -1;
 
-        InsertIngredientEx(0, "Screwdriver", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Crowbar", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Pliers", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "SteakKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "KitchenKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "CombatKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "HuntingKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Cleaver", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "AK_Bayonet", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "M9A1_Bayonet", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "SNAFU_Kabar", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Msp_VorpalKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "KukriKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "FangeKnife", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Mosin_Bayonet", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "SNAFU_SKS_Bayonet", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "Machete", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "CrudeMachete", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
-        InsertIngredientEx(0, "OrientalMachete", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_PLACING_HEAVY, true);
+        InsertIngredientEx(0, "Screwdriver", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Crowbar", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Pliers", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "Hatchet", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "WoodAxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe_Black", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "FirefighterAxe_Green", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
-        InsertIngredientEx(0, "Pickaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_MINEROCK, true);
-        InsertIngredientEx(0, "Iceaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_MINEROCK, true);
+        InsertIngredientEx(0, "Pickaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
+        InsertIngredientEx(0, "Iceaxe", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "HandSaw", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
         InsertIngredientEx(0, "Hacksaw", "FirewoodSplit_Saw", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
-        InsertIngredientEx(0, "Sword", "FirewoodSplit_Axe", DayZPlayerConstants.CMD_ACTIONFB_SPLITTING_FIREWOOD, true);
 
         m_IngredientAddHealth[0] = 0;
         m_IngredientSetHealth[0] = -1;
@@ -173,17 +149,11 @@ class salvagePCBCasing extends RecipeBase
     override void Do(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, float specialty_weight)
     {
         super.Do(ingredients, player, results, specialty_weight);
-        
-        array<int> preferredTools = new array<int>;
-        preferredTools.Insert(toolCategory.TOOL_UTILITY_SCREW);
-        preferredTools.Insert(toolCategory.TOOL_UTILITY_WRENCH);
-        
         TStringArray possibleResults = new TStringArray;
         possibleResults.Insert("jrdn_gps_pcb");
         possibleResults.Insert("jrdn_gps_case");
         possibleResults.Insert("jrdn_gps_wired_pcb");
-        
-        ProcessElectronicsRecipe(ingredients, player, results, preferredTools, possibleResults, "salvagePCBCasing");
+        ProcessElectronicsRecipe(ingredients, player, results, possibleResults, "salvagePCBCasing");
     }
 }
 

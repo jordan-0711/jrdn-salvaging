@@ -1,8 +1,3 @@
-// ===================================================================================
-// jrdn_gps_config.c
-// Configuration for JRDN GPS Salvaging mod
-// ===================================================================================
-
 class jrdn_DebugSettings
 {
     bool Enable = true;
@@ -34,13 +29,6 @@ class jrdn_CutSettings
     float healthPenalty = 5.0;
 }
 
-class jrdn_ToolSettings
-{
-    float preferredMultiplier = 1.0;
-    float notPreferredMultiplier = 1.4;
-    float notPreferredFixed = -10.0;
-}
-
 class jrdn_WetSettings
 {
     bool lockoutAtSoaking = true;
@@ -52,36 +40,34 @@ class jrdn_GearSettings
     float gloveMitigation = 0.5;
 }
 
+// CHANGED: Now uses percentage damage per wetness level
 class jrdn_ResultSettings
 {
-    float wetPenaltyScale = 4.0;
-    float wetPenaltyMax = 10.0;
-    float wrongToolPenalty = 10.0;
+    float damageWet = 10.0;           // 10% damage when wet (0.5-0.74)
+    float damageSoaking = 15.0;       // 15% damage when soaking (0.75-0.89)
+    float damageDrenched = 25.0;      // 25% damage when drenched (0.9+)
     float poweredPenalty = 0.0;
     bool ruinOnCarBattery = true;
     bool ruinOnTruckBattery = false;
 }
 
-class jrdn_NotificationSettings
+// NEW: Configurable notification messages
+class jrdn_NotificationMessages
 {
-    bool Enable = true;
-    float DefaultDuration = 5.0;
-    
     // Cutting recipe messages
-    string CutTitle = "You Cut Yourself!";
-    string CutDetailWet = "The {wetness} {target} slipped and your {tool} cut your {bodypart}!";
-    string CutDetailDry = "Your {tool} slipped and cut your {bodypart}!";
-    string CutDetailWrongTool = " Using the wrong tool made it worse.";
-    string CutDetailResultDamage = " Your {result} took damage too.";
+    string cutTitle = "You Cut Yourself!";
+    string cutSimple = "Your tool slipped!";
+    string cutWithDamage = "Tool slipped and damaged the result";
     
     // Electronics recipe messages
-    string ShockTitle = "Electric Shock!";
-    string ShockDetailLow = "You were shocked working on the {wetness} {target} with your {tool}!";
-    string ShockDetailMedium = "You were badly shocked working on the {wetness} {target} with your {tool}!";
-    string ShockDetailHigh = "You were severely shocked working on the {wetness} {target} with your {tool}!";
-    string ShockDetailWrongTool = " Using the wrong tool made it worse.";
-    string ShockDetailResultDestroyed = " The {result} was destroyed.";
-    string ShockDetailResultDamaged = " The {result} was damaged.";
+    string shockTitle = "Electric Shock!";
+    string shockSimple = "Shocked by power source!";
+    string shockWithDamage = "Shocked and result damaged";
+    
+    // Damage-only messages
+    string damageTitle = "Item Damaged";
+    string damageWet = "Wet conditions damaged result";
+    string damagePowered = "Power source damaged result";
 }
 
 // Tool category assignments - admins can add modded tools here
@@ -164,104 +150,6 @@ class jrdn_ToolCategoryAssignments
     }
 }
 
-// Friendly name mappings
-class jrdn_FriendlyNames
-{
-    ref map<string, string> ItemNames;
-    ref map<string, string> BodyPartNames;
-    ref map<string, string> WetnessDescriptions;
-    ref map<string, string> ToolCategoryNouns;
-    ref map<string, string> PowerSourceNames;
-    
-    void jrdn_FriendlyNames()
-    {
-        ItemNames = new map<string, string>;
-        // Add common items - admins can add more
-        ItemNames.Insert("Battery9V", "9V battery");
-        ItemNames.Insert("CarBattery", "car battery");
-        ItemNames.Insert("TruckBattery", "truck battery");
-        ItemNames.Insert("CircuitBoard", "circuit board");
-        ItemNames.Insert("MetalWire", "metal wire");
-        ItemNames.Insert("CopperWire", "copper wire");
-        ItemNames.Insert("ElectronicRepairKit", "electronic repair kit");
-        ItemNames.Insert("Rope", "rope");
-        ItemNames.Insert("MetalPlate", "metal plate");
-        
-        BodyPartNames = new map<string, string>;
-        BodyPartNames.Insert("LeftForeArmRoll", "left forearm");
-        BodyPartNames.Insert("RightForeArmRoll", "right forearm");
-        BodyPartNames.Insert("LeftArmRoll", "left arm");
-        BodyPartNames.Insert("RightArmRoll", "right arm");
-        BodyPartNames.Insert("LeftLeg", "left leg");
-        BodyPartNames.Insert("RightLeg", "right leg");
-        BodyPartNames.Insert("LeftLegRoll", "left leg");
-        BodyPartNames.Insert("RightLegRoll", "right leg");
-        BodyPartNames.Insert("LeftUpLeg", "left thigh");
-        BodyPartNames.Insert("RightUpLeg", "right thigh");
-        BodyPartNames.Insert("LeftFoot", "left foot");
-        BodyPartNames.Insert("RightFoot", "right foot");
-        BodyPartNames.Insert("LeftToeBase", "left toes");
-        BodyPartNames.Insert("RightToeBase", "right toes");
-        BodyPartNames.Insert("Head", "head");
-        BodyPartNames.Insert("Neck", "neck");
-        BodyPartNames.Insert("Pelvis", "hip");
-        
-        WetnessDescriptions = new map<string, string>;
-        WetnessDescriptions.Insert("dry", "dry");
-        WetnessDescriptions.Insert("damp", "damp");
-        WetnessDescriptions.Insert("wet", "wet");
-        WetnessDescriptions.Insert("soaking", "soaking wet");
-        WetnessDescriptions.Insert("drenched", "drenched");
-        
-        ToolCategoryNouns = new map<string, string>;
-        ToolCategoryNouns.Insert("SMALL_BLADE", "knife");
-        ToolCategoryNouns.Insert("LARGE_BLADE", "blade");
-        ToolCategoryNouns.Insert("AXE", "axe");
-        ToolCategoryNouns.Insert("SAW", "saw");
-        ToolCategoryNouns.Insert("HAMMER", "hammer");
-        ToolCategoryNouns.Insert("UTILITY_SCREW", "tool");
-        ToolCategoryNouns.Insert("UTILITY_WRENCH", "wrench");
-        ToolCategoryNouns.Insert("BLUNT", "blunt tool");
-        ToolCategoryNouns.Insert("LONG", "long tool");
-        
-        PowerSourceNames = new map<string, string>;
-        PowerSourceNames.Insert("1", "9V battery");
-        PowerSourceNames.Insert("2", "car battery");
-        PowerSourceNames.Insert("3", "truck battery");
-    }
-}
-
-// Notification message templates
-class jrdn_NotificationMessages
-{
-    // Cutting recipe messages
-    string Cut_WrongTool_Wet = "The {wetness} {ingredient} slipped and your {tool} cut your {bodypart}. Your {result} took damage from using the wrong tool.";
-    string Cut_WrongTool_Dry = "Your {tool} slipped while working and cut your {bodypart}. Your {result} took damage from using the wrong tool.";
-    string Cut_Wet = "The {wetness} {ingredient} slipped and your {tool} cut your {bodypart}. Your {result} took some damage too.";
-    string Cut_Dry = "Your {tool} slipped while working and cut your {bodypart}. Your {result} took some damage too.";
-    string Cut_NoResult_Wet = "The {wetness} {ingredient} slipped and your {tool} cut your {bodypart}.";
-    string Cut_NoResult_Dry = "Your {tool} slipped while working and cut your {bodypart}.";
-    
-    string WrongTool_Only = "Using your {tool} damaged the {result}.";
-    
-    // Electronics recipe messages
-    string Shock_Power_Wet_WrongTool = "Your {tool} touched a live wire from the {wetness} {power} and shocked you! The {result} was destroyed from being powered and using the wrong tool.";
-    string Shock_Power_Wet = "Your {tool} touched a live wire from the {wetness} {power} and shocked you! The {result} was damaged.";
-    string Shock_Power_Dry_WrongTool = "Your {tool} touched a live wire from the {power} and shocked you! The {result} was destroyed from being powered and using the wrong tool.";
-    string Shock_Power_Dry = "Your {tool} touched a live wire from the {power} and shocked you! The {result} was damaged.";
-    
-    string Power_WrongTool = "Working on the powered {ingredient} with your {tool} destroyed the {result}.";
-    string Power_Only = "Working on the powered {ingredient} damaged the {result}.";
-    
-    string Electronics_WrongTool_Only = "Using your {tool} damaged the {result}.";
-    
-    // Notification titles
-    string Title_Cut = "You Cut Yourself!";
-    string Title_Shock = "Electric Shock!";
-    string Title_Damage = "Component Damaged!";
-    string Title_WrongTool = "Wrong Tool!";
-}
-
 class jrdn_gps_config
 {
     static const string MOD_AUTHOR = "JRDN_GPS";
@@ -272,32 +160,28 @@ class jrdn_gps_config
     
     private const static string ModFolder = "$profile:\\" + MOD_AUTHOR + "\\";
     private const static string ConfigName = "JRDNSalvagingConfig.json";
-    private const static string CURRENT_VERSION = "2";
+    private const static string CURRENT_VERSION = "4";
     string ConfigVersion;
     
     ref jrdn_DebugSettings DebugSettings;
     ref jrdn_PowerSettings PowerSettings;
     ref jrdn_CutSettings CutSettings;
-    ref jrdn_ToolSettings ToolSettings;
     ref jrdn_WetSettings WetSettings;
     ref jrdn_GearSettings GearSettings;
     ref jrdn_ResultSettings ResultSettings;
+    ref jrdn_NotificationMessages NotificationMessages;  // NEW
     ref jrdn_ToolCategoryAssignments ToolCategories;
-    ref jrdn_FriendlyNames FriendlyNames;
-    ref jrdn_NotificationMessages NotificationMessages;
     
     void jrdn_gps_config()
     {
         DebugSettings = new jrdn_DebugSettings;
         PowerSettings = new jrdn_PowerSettings;
         CutSettings = new jrdn_CutSettings;
-        ToolSettings = new jrdn_ToolSettings;
         WetSettings = new jrdn_WetSettings;
         GearSettings = new jrdn_GearSettings;
         ResultSettings = new jrdn_ResultSettings;
+        NotificationMessages = new jrdn_NotificationMessages;  // NEW
         ToolCategories = new jrdn_ToolCategoryAssignments;
-        FriendlyNames = new jrdn_FriendlyNames;
-        NotificationMessages = new jrdn_NotificationMessages;
     }
     
     void Load()
